@@ -7,47 +7,58 @@
     android:padding="16dp"
     android:background="#F9FBFC">
 
+
+    <TextView
+        android:id="@+id/tx_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="320dp"
+        android:text=""
+        android:textColor="#000000"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
     <TextView
         android:id="@+id/tvTitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Meus "
+        android:text="My "
         android:textColor="#000000"
-        android:textSize="24sp"
+        android:textSize="28sp"
         android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Lugares"
-        android:textColor="#2AB17F"
-        android:textSize="24sp"
-        android:textStyle="bold"
         android:layout_marginBottom="8dp"
-        android:layout_marginStart="60dp"
-        android:layout_marginTop="-32dp" />
+        android:text="Places"
+        android:textColor="#2AB17F"
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:queryHint="Buscar por nome ou endereço..."
         android:iconifiedByDefault="false"
-        android:layout_marginBottom="16dp" />
+        android:queryHint="Buscar por nome ou endereço..." />
 
     <Button
-        android:id="@+id/btnAdicionar"
+        android:id="@+id/btnAdd"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:backgroundTint="#000000"
         android:elevation="6dp"
         android:padding="12dp"
-        android:text="Adicionar novo local"
+        android:text="Add new location"
         android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:layout_marginTop="15dp"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:id="@+id/recyclerView"
+        android:layout_width="395dp"
+        android:layout_height="458dp"
+        android:layout_marginTop="15dp" />
+
+
 </LinearLayout>
