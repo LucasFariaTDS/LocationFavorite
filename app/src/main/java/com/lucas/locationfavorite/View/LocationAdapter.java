@@ -1,15 +1,19 @@
 package com.lucas.locationfavorite.View;
 
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Filter;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.lucas.locationfavorite.DB.DBLocation;
 import com.lucas.locationfavorite.Model.LocationItem;
 import com.lucas.locationfavorite.R;
@@ -44,16 +48,17 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.ViewHo
         holder.tvName.setText(item.getName());
         holder.tvCoords.setText(item.getLatitude() + ", " + item.getLongitude());
 
+        if (item.getPhotoUri() != null && !item.getPhotoUri().isEmpty()) {
+            holder.ivPhoto.setImageURI(Uri.parse(item.getPhotoUri()));
+        } else {
+            holder.ivPhoto.setImageResource(R.drawable.ic_placeholder); // ícone padrão
+        }
+
         holder.btnDelete.setOnClickListener(v -> {
             DBLocation dbLocation = new DBLocation(context);
             dbLocation.deleteLocation(item.getId());
 
-            for (int i = 0; i < locationList.size(); i++) {
-                if (locationList.get(i).getId() == item.getId()) {
-                    locationList.remove(i);
-                    break;
-                }
-            }
+            locationList.removeIf(loc -> loc.getId() == item.getId());
             filteredList.remove(position);
             notifyItemRemoved(position);
             notifyItemRangeChanged(position, filteredList.size());
@@ -70,14 +75,17 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.ViewHo
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvCoords;
         Button btnDelete;
+        ImageView ivPhoto;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tv_name);
             tvCoords = itemView.findViewById(R.id.tv_coords);
             btnDelete = itemView.findViewById(R.id.btn_delete);
+            ivPhoto = itemView.findViewById(R.id.iv_photo);
         }
     }
+
     public Filter getFilter() {
         return new Filter() {
             @Override
@@ -104,6 +112,7 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.ViewHo
             }
         };
     }
+
     public void addLocation(LocationItem item) {
         locationList.add(item);
         filteredList.add(item);

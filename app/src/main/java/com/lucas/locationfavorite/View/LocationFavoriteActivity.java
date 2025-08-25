@@ -1,10 +1,12 @@
 package com.lucas.locationfavorite.View;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.View;
@@ -14,6 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
@@ -43,8 +47,17 @@ public class LocationFavoriteActivity extends AppCompatActivity {
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
     private List<LocationItem> locationList = new ArrayList<>();
-    private List<LocationItem> filteredList = new ArrayList<>();
-    private LocationAdapter adapter = new LocationAdapter(locationList, this);
+    private LocationAdapter adapter;
+
+    private Uri selectedImageUri = null;
+
+    private final ActivityResultLauncher<Intent> pickImageLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    selectedImageUri = result.getData().getData();
+                    Toast.makeText(this, "Foto selecionada!", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +69,31 @@ public class LocationFavoriteActivity extends AppCompatActivity {
         searchView = findViewById(R.id.searchView);
         btnAdd = findViewById(R.id.btnAdd);
         tx_counter = findViewById(R.id.tx_counter);
+
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        DBLocation dbLocation = new DBLocation(this);
+        Cursor cursor = dbLocation.getAllLocations();
+
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow("lat"));
+                double lng = cursor.getDouble(cursor.getColumnIndexOrThrow("long"));
+                String photo = cursor.getString(cursor.getColumnIndexOrThrow("photoUri"));
+
+                locationList.add(new LocationItem(id, name, lat, lng, photo));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+
+        adapter = new LocationAdapter(locationList, this);
+        recyclerView.setAdapter(adapter);
+
+        // Atualiza contador
+        tx_counter.setText(String.valueOf(locationList.size()));
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -88,6 +126,7 @@ public class LocationFavoriteActivity extends AppCompatActivity {
                 }
             }
         };
+
         btnAdd.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -96,36 +135,6 @@ public class LocationFavoriteActivity extends AppCompatActivity {
             }
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
         });
-
-        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) {
-                double lat = location.getLatitude();
-                double lng = location.getLongitude();
-
-                showLocation(lat, lng);
-            } else {
-                Toast.makeText(this, "Unable to get location", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        DBLocation dbLocation = new DBLocation(this);
-        Cursor cursor = dbLocation.getAllLocations();
-
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                double lat = cursor.getDouble(cursor.getColumnIndexOrThrow("lat"));
-                double lng = cursor.getDouble(cursor.getColumnIndexOrThrow("long"));
-
-                locationList.add(new LocationItem(id, name, lat, lng));
-            } while (cursor.moveToNext());
-        }
-        adapter = new LocationAdapter(locationList, this);
-        recyclerView.setAdapter(adapter);
     }
 
     private void showLocation(double lat, double lng) {
@@ -137,21 +146,38 @@ public class LocationFavoriteActivity extends AppCompatActivity {
         EditText etName = view.findViewById(R.id.et_local_name);
         Button btnCancel = view.findViewById(R.id.btn_cancel);
         Button btnSave = view.findViewById(R.id.btn_save);
+        Button btnPickPhoto = view.findViewById(R.id.btn_pick_photo);
+
+        selectedImageUri = null;
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnPickPhoto.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            pickImageLauncher.launch(intent);
+        });
 
         btnSave.setOnClickListener(v -> {
             String name = etName.getText().toString().trim();
             if (!name.isEmpty()) {
                 DBController_loc dbController_loc = new DBController_loc(this);
-                String result = dbController_loc.insertData(name, lat, lng);
+                String result = dbController_loc.insertData(
+                        name,
+                        lat,
+                        lng,
+                        selectedImageUri != null ? selectedImageUri.toString() : null
+                );
+
                 if (result.equals("Record inserted")) {
                     SQLiteDatabase db = new DBLocation(this).getReadableDatabase();
                     Cursor last = db.rawQuery("SELECT * FROM location ORDER BY id DESC LIMIT 1", null);
                     if (last.moveToFirst()) {
                         int id = last.getInt(last.getColumnIndexOrThrow("id"));
-                        LocationItem newItem = new LocationItem(id, name, lat, lng);
+                        String photo = last.getString(last.getColumnIndexOrThrow("photoUri"));
+                        LocationItem newItem = new LocationItem(id, name, lat, lng, photo);
                         adapter.addLocation(newItem);
+                        tx_counter.setText(String.valueOf(adapter.getItemCount()));
                     }
                     last.close();
 
@@ -164,6 +190,7 @@ public class LocationFavoriteActivity extends AppCompatActivity {
                 etName.setError("Enter a name");
             }
         });
+
         dialog.show();
     }
 }

@@ -3,30 +3,28 @@ package com.lucas.locationfavorite.Controller;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+
 import com.lucas.locationfavorite.DB.DBLocation;
 
 public class DBController_loc {
-    private SQLiteDatabase db;
-    private DBLocation bank;
+
+    private DBLocation dbLocation;
 
     public DBController_loc(Context context) {
-        bank = new DBLocation(context);
+        dbLocation = new DBLocation(context);
     }
 
-    public String insertData(String name, double latitude, double longitude) {
-        ContentValues data = new ContentValues();
-        db = bank.getWritableDatabase();
+    public String insertData(String name, double lat, double lng, String photoUri) {
+        SQLiteDatabase db = dbLocation.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("name", name);
+        values.put("lat", lat);
+        values.put("long", lng);
+        values.put("photoUri", photoUri);
 
-        data.put(DBLocation.Name, name);
-        data.put(DBLocation.Latitude, latitude);
-        data.put(DBLocation.Longitude, longitude);
+        long result = db.insert("location", null, values);
+        db.close();
 
-        try {
-            long result = db.insert(DBLocation.Table, null, data);
-            return result == -1 ? "Error inserting record" : "Record inserted";
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Database error: " + e.getMessage();
-        }
+        return result == -1 ? "Error inserting" : "Record inserted";
     }
 }

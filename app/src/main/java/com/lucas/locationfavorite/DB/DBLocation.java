@@ -4,48 +4,41 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.provider.BaseColumns;
 
-public class DBLocation extends SQLiteOpenHelper implements BaseColumns {
-    public static final String Name_Bank = "location.db";
-    public static final String Table = "location";
-    public static final String ID = "id";
-    public static final String Name = "name";
-    public static final String Latitude = "lat";
-    public static final String Longitude = "long";
-    public static final int Version = 1;
+public class DBLocation extends SQLiteOpenHelper {
+
+    private static final String DB_NAME = "locationDB";
+    private static final int DB_VERSION = 2; // incrementado por causa do novo campo
 
     public DBLocation(Context context) {
-        super(context, Name_Bank, null, Version);
+        super(context, DB_NAME, null, DB_VERSION);
     }
 
     @Override
-    public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        String criarDB = "CREATE TABLE " + DBLocation.Table +
-                "( " + DBLocation.ID + " INTEGER PRIMARY KEY, "
-                + DBLocation.Name + " text, "
-                + DBLocation.Latitude + " real, "
-                + DBLocation.Longitude + " real)";
-        sqLiteDatabase.execSQL(criarDB);
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE location (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "name TEXT," +
+                "lat REAL," +
+                "long REAL," +
+                "photoUri TEXT" +
+                ")");
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + Table);
-        onCreate(sqLiteDatabase);
-    }
-
-    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        onUpgrade(db, oldVersion, newVersion);
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS location");
+        onCreate(db);
     }
 
     public Cursor getAllLocations() {
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM " + Table, null);
+        return db.rawQuery("SELECT * FROM location", null);
     }
 
-    public int deleteLocation(int id) {
+    public void deleteLocation(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(Table, "id = ?", new String[]{String.valueOf(id)});
+        db.delete("location", "id=?", new String[]{String.valueOf(id)});
+        db.close();
     }
 }

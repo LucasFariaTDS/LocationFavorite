@@ -10,9 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.lucas.locationfavorite.R;
 
 public class MainActivity extends AppCompatActivity {
-
     private Button btnSingIn, btnCreate;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
